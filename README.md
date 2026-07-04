@@ -20,8 +20,8 @@ The script requires the following tools to be present on your system. By default
 * yt-dlp-hd: Configured to point to this script or your master tool directory.
 * FFmpeg & FFprobe: Version 8.0 or newer (Essentials Build recommended) for media analysis and transcoding.
 
-## Configuration
-Before running the script, open it in a text editor and adjust the paths to match your system environment:
+## Configuration & Environment Setup## 1. Batch Script Configuration
+Before running the script, open YoutubeVideoDownloadHook.bat in a text editor and adjust the paths to match your system environment:
 
 set gamespath=D:
 :: Configure tool paths
@@ -33,10 +33,28 @@ set "ffprobe=%tools%\ffmpeg-8.0-essentials_build\bin\ffprobe.exe"
 :: Playnite extra metadata root
 set "gamesroot=%gamespath%\saved games\playnite\extrametadata\games"
 
-## Expected Directory Layout
-Based on the default configuration, your files should be structured like this:
+## 2. yt-dlp-hd INI Configuration
+To ensure yt-dlp-hd forces 4K downloads and correctly triggers this post-processing script, update your yt-dlp.ini file located inside the yt-dlp-hd folder to the following settings:
 
-D:\saved games\
+maxres=4k
+yt-dlp-path=D:\Saved Games\tools\yt-dlp
+ffmpeg-path=D:\Saved Games\tools\ffmpeg-8.0-essentials_build\bin
+debug=true
+postRunScript=D:\Saved Games\tools\YoutubeVideoDownloadHook.bat
+
+## 3. Playnite Extra Metadata Loader Setup
+To link everything into Playnite, follow these steps within the Extra Metadata Loader add-on configuration menu:
+
+   1. Open Playnite and navigate to your Add-ons Settings.
+   2. Locate the Extra Metadata Loader configurations panel.
+   3. Important: Point the YT-DLP Path exclusively to your yt-dlp-hd executable folder (do not point it directly to the real yt-dlp.exe or this batch script). yt-dlp-hd needs to intercept Playnite's download request first.
+   4. Set the FFmpeg Path and FFprobe Path fields in the add-on settings to your actual FFmpeg binary directory (D:\Saved Games\tools\ffmpeg-8.0-essentials_build\bin).
+   5. Click Save and Restart Playnite to apply the path overrides.
+
+## Expected Directory Layout
+Based on your configuration, your files should be structured like this:
+
+D:\Saved Games\
 │
 ├── playnite\
 │   └── extrametadata\
@@ -47,25 +65,38 @@ D:\saved games\
     │   └── bin\
     │       ├── ffmpeg.exe
     │       └── ffprobe.exe
-    └── yt-dlp\
-        └── yt-dlp.exe
+    ├── yt-dlp\
+    │   └── yt-dlp.exe              <-- Real yt-dlp binary targeted by .ini
+    ├── yt-dlp-hd\
+    │   ├── yt-dlp-hd.exe           <-- Targeted by Playnite Extra Metadata Loader
+    │   └── yt-dlp.ini              <-- Update this file with the INI settings above
+    └── YoutubeVideoDownloadHook.bat <-- This script triggered via postRunScript
 
-## Setup & Deployment with yt-dlp-hd
-To use this script effectively alongside yt-dlp-hd, follow this workflow:
+## Setup & Deployment Flowchart
+When a video download request is initiated inside Playnite:
 
-   1. Configure yt-dlp-hd via its yt-dlp.ini file to pull your desired resolution (e.g., maxres=4k or maxres=1080p).
-   2. Set this Batch script as the primary execution target.
-   3. The script passes arguments to yt-dlp, allows yt-dlp-hd to enforce HD profiles, and immediately cleans up the heavy, unplayable AV1 video codecs by re-encoding them into user-friendly H.264 streams.
+[Playnite Extra Metadata Loader] 
+              │
+              ▼
+    [yt-dlp-hd.exe (Wrapper)] ──(Enforces 4K Settings via ini)──► [Real yt-dlp.exe]
+              │                                                            │
+              │                                                     (Downloads AV1 Stream)
+              ▼                                                            │
+ [YoutubeVideoDownloadHook.bat] ◄──────(Triggers postRunScript)────────────┘
+              │
+              ▼
+   (FFmpeg scans & updates 
+    AV1 -> H.264 in-place)
 
 ## Usage
 You can call this script exactly how you would call standard yt-dlp. Replace your standard execution path with this batch file.
 ## Basic Download
 
-myscript.bat "https://youtube.com"
+YoutubeVideoDownloadHook.bat "https://youtube.com"
 
 ## Advanced Arguments (Passed Directly)
 
-myscript.bat --format "bestvideo+bestaudio" --output "D:\saved games\playnite\extrametadata\games\mygame\videotrailer.mp4" "URL"
+YoutubeVideoDownloadHook.bat --format "bestvideo+bestaudio" --output "D:\Saved Games\playnite\extrametadata\games\mygame\videotrailer.mp4" "URL"
 
 ## How It Works
 
@@ -75,4 +106,6 @@ myscript.bat --format "bestvideo+bestaudio" --output "D:\saved games\playnite\ex
    4. Stream Probing: ffprobe extracts the string value of the video codec name.
    5. Transcode & Swap: If the codec is explicitly identified as av1, FFmpeg creates a .tmp.mp4 version using H.264 video profiles, deletes the original AV1 file, and renames the temporary item to videotrailer.mp4.
 
+------------------------------
+Would you like help testing this pipeline with a specific sample YouTube URL to verify the path routing, or would you like to add a custom notification popup to Windows whenever a trailer successfully transcodes?
 
