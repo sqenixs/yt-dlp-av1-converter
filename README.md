@@ -2,11 +2,12 @@
 Covert yt-dlp output from av1 to h264
 
 ## Batch Video Post-Processor for Playnite Trailers
-This Windows Batch script acts as a wrapper for yt-dlp. It forwards all command-line arguments directly to the real yt-dlp executable to download videos. Once the download finishes, the script automatically scans your Playnite extra metadata directory, identifies any downloaded trailers using the AV1 codec, and converts them to H.264 MP4 in-place using ffmpeg and ffprobe.
-This ensures compatibility with media players or interfaces (like Playnite themes) that do not natively support AV1 hardware acceleration or software decoding.
+This Windows Batch script acts as an extension for yt-dlp in your video management pipeline. It works directly in tandem with [yt-dlp-hd](https://github.com/Britman72/yt-dlp-hd), a Go-based wrapper designed to force Playnite's Extra Metadata Loader add-on to pull high-resolution (up to 4K) YouTube trailers.
+Because high-resolution YouTube downloads frequently use the AV1 codec, this script automatically steps in post-download. It sweeps your Playnite directories, finds those newly downloaded high-res AV1 files, and transcodes them into standard H.264 MP4 format to ensure perfect compatibility with your Playnite themes and media players.
 ## Features
 
 * Transparent Wrapper: Forwards 100% of arguments (%*) to your real yt-dlp.exe.
+* yt-dlp-hd Integration: Handles the AV1 video streams generated when forcing high-resolution YouTube downloads.
 * Automatic Scanning: Recursively searches the Playnite game metadata directory for videotrailer.mp4 files.
 * Smart Codec Detection: Uses ffprobe to check the video stream codec, skipping files that are already compressed in acceptable formats.
 * In-Place H.264 Conversion: Converts AV1 video to H.264 (using libx264, fast preset, and CRF 18) while preserving the original audio stream.
@@ -16,6 +17,7 @@ This ensures compatibility with media players or interfaces (like Playnite theme
 The script requires the following tools to be present on your system. By default, the script expects them in the relative paths structured below:
 
 * yt-dlp: Command-line video downloader.
+* yt-dlp-hd: Configured to point to this script or your master tool directory.
 * FFmpeg & FFprobe: Version 8.0 or newer (Essentials Build recommended) for media analysis and transcoding.
 
 ## Configuration
@@ -34,7 +36,7 @@ set "gamesroot=%gamespath%\saved games\playnite\extrametadata\games"
 ## Expected Directory Layout
 Based on the default configuration, your files should be structured like this:
 
-D:\text\saved games\
+D:\saved games\
 │
 ├── playnite\
 │   └── extrametadata\
@@ -47,6 +49,13 @@ D:\text\saved games\
     │       └── ffprobe.exe
     └── yt-dlp\
         └── yt-dlp.exe
+
+## Setup & Deployment with yt-dlp-hd
+To use this script effectively alongside yt-dlp-hd, follow this workflow:
+
+   1. Configure yt-dlp-hd via its yt-dlp.ini file to pull your desired resolution (e.g., maxres=4k or maxres=1080p).
+   2. Set this Batch script as the primary execution target.
+   3. The script passes arguments to yt-dlp, allows yt-dlp-hd to enforce HD profiles, and immediately cleans up the heavy, unplayable AV1 video codecs by re-encoding them into user-friendly H.264 streams.
 
 ## Usage
 You can call this script exactly how you would call standard yt-dlp. Replace your standard execution path with this batch file.
