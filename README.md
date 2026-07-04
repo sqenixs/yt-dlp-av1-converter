@@ -20,7 +20,9 @@ The script requires the following tools to be present on your system. By default
 * yt-dlp-hd: Configured to point to this script or your master tool directory.
 * FFmpeg & FFprobe: Version 8.0 or newer (Essentials Build recommended) for media analysis and transcoding.
 
-## Configuration & Environment Setup## 1. Batch Script Configuration
+## Configuration & Environment Setup
+
+## 1. Batch Script Configuration
 Before running the script, open YoutubeVideoDownloadHook.bat in a text editor and adjust the paths to match your system environment:
 
 set gamespath=D:
